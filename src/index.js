@@ -11,6 +11,7 @@ root.render(
     <AppState>
     <App />
     </AppState>
+    
   </React.StrictMode>
 );
 
