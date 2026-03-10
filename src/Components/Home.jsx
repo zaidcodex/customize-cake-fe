@@ -13,7 +13,9 @@ const Home = () => {
       <Carousal/>
      <Banner/>
      <Products/>
+     <div className='mx-3'>
      <Imgviewer/>
+     </div>
      <Typesofcake/>
      <OrderDesignerCake/>
     </div>

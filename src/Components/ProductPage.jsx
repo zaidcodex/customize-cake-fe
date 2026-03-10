@@ -1,10 +1,9 @@
-import React, { useContext, useState, useEffect, useRef } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import AppContext from '../Context/appContext'
 import { useParams } from 'react-router-dom/cjs/react-router-dom'
 
-const CART_KEY = 'cart_items'
-
-const ProductPage = () => {
+// Props: cartItems, setCartItems, setShowCart — all come from App.jsx
+const ProductPage = ({ cartItems, setCartItems, setShowCart }) => {
   const context = useContext(AppContext)
   const { getProduct } = context
   const { id } = useParams()
@@ -14,20 +13,6 @@ const ProductPage = () => {
   const [error, setError] = useState(null)
   const [mainImage, setMainImage] = useState('')
 
-  // ── Cart — init from localStorage ──────────────────────────────────────
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const stored = localStorage.getItem(CART_KEY)
-      return stored ? JSON.parse(stored) : []
-    } catch {
-      return []
-    }
-  })
-
-  useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(cartItems))
-  }, [cartItems])
-
   // User selections
   const [selectedFlavour, setSelectedFlavour] = useState('')
   const [selectedShape, setSelectedShape] = useState('')
@@ -36,8 +21,6 @@ const ProductPage = () => {
   const [wishText, setWishText] = useState('')
   const [cardMessage, setCardMessage] = useState('')
   const [quantity, setQuantity] = useState(1)
-
-  const offcanvasBtnRef = useRef(null)
 
   useEffect(() => {
     const func = async () => {
@@ -77,21 +60,31 @@ const ProductPage = () => {
     else if (type === 'decrement' && quantity > 1) setQuantity((prev) => prev - 1)
   }
 
-  // ── Compute whether all required selections are made ─────────────────
   const isCartReady = product && (
     (!product.sizes?.length    || selectedSize) &&
     (!product.flavours?.length || selectedFlavour) &&
     (!product.shapes?.length   || selectedShape)
   )
 
+  // ── Add to cart — uses shared App.jsx cart state ──────────────────────
   const handleAddToCart = () => {
     if (!isCartReady) return
+
+    const productImageUrl = product.images?.[0]?.url || ''
 
     const newItem = {
       cartId: Date.now(),
       productId: id,
       productName: product.productName,
-      image: product.images?.[0]?.url || '',
+
+      // image fields — used in cart sidebar + saved to Order.items[].productImage
+      image: productImageUrl,
+      productImage: productImageUrl,
+
+      // regular product flag
+      userCake: false,
+      isCustomCake: false,
+
       quantity,
       selectedFlavour,
       selectedShape,
@@ -103,7 +96,8 @@ const ProductPage = () => {
     }
 
     setCartItems((prev) => [...prev, newItem])
-    if (offcanvasBtnRef.current) offcanvasBtnRef.current.click()
+    // Open the App.jsx offcanvas cart
+    setShowCart(true)
   }
 
   const handleRemoveFromCart = (cartId) => {
@@ -112,7 +106,7 @@ const ProductPage = () => {
 
   const cartGrandTotal = cartItems.reduce((sum, item) => sum + item.itemTotal, 0)
 
-  // ── Loading ──────────────────────────────────────────────────────────────
+  // ── Loading / Error ──────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="container py-5 text-center">
@@ -133,16 +127,6 @@ const ProductPage = () => {
 
   return (
     <>
-      {/* Hidden offcanvas trigger */}
-      <button
-        ref={offcanvasBtnRef}
-        type="button"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#cartOffcanvas"
-        aria-controls="cartOffcanvas"
-        style={{ display: 'none' }}
-      />
-
       {/* ── Product Page ── */}
       <div className="container py-5 text-start">
         <div className="row g-5">
@@ -390,7 +374,6 @@ const ProductPage = () => {
                 >+</button>
               </div>
 
-              {/* Add to Cart — disabled until all required fields selected */}
               <button
                 className="btn w-100 py-2 fw-semibold"
                 style={{
@@ -411,7 +394,6 @@ const ProductPage = () => {
                   : '🛒 Add to Cart'}
               </button>
 
-              {/* Helper text showing what's still missing */}
               {product.isAvailable && !isCartReady && (
                 <p className="text-muted text-center mt-2 mb-0" style={{ fontSize: '0.8rem' }}>
                   Please select{' '}
@@ -433,132 +415,6 @@ const ProductPage = () => {
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* ── Cart Offcanvas ── */}
-      <div
-        className="offcanvas offcanvas-end"
-        tabIndex="-1"
-        id="cartOffcanvas"
-        aria-labelledby="cartOffcanvasLabel"
-        style={{ width: '420px' }}
-      >
-        <div className="offcanvas-header border-bottom">
-          <h5 className="offcanvas-title fw-bold" id="cartOffcanvasLabel">
-            🛒 Your Cart
-            {cartItems.length > 0 && (
-              <span
-                className="badge ms-2 rounded-pill"
-                style={{ backgroundColor: '#FDACAC', color: '#333', fontSize: '0.8rem' }}
-              >
-                {cartItems.length} item{cartItems.length > 1 ? 's' : ''}
-              </span>
-            )}
-          </h5>
-          <button
-            type="button"
-            className="btn-close"
-            data-bs-dismiss="offcanvas"
-            aria-label="Close"
-          ></button>
-        </div>
-
-        <div className="offcanvas-body p-0 d-flex flex-column" style={{ height: '100%' }}>
-
-          <div className="flex-grow-1 overflow-auto">
-            {cartItems.length === 0 ? (
-              <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-                <div style={{ fontSize: '3rem' }}>🧁</div>
-                <p className="mt-3">Your cart is empty</p>
-              </div>
-            ) : (
-              <div className="p-3 d-flex flex-column gap-3">
-                {cartItems.map((item) => (
-                  <div
-                    key={item.cartId}
-                    className="card border-0 shadow-sm rounded-3"
-                    style={{ fontSize: '0.88rem' }}
-                  >
-                    <div className="card-body p-3">
-                      <div className="d-flex align-items-start gap-3">
-                        {item.image && (
-                          <img
-                            src={item.image}
-                            alt={item.productName}
-                            className="rounded-2"
-                            style={{ width: '64px', height: '64px', objectFit: 'cover', flexShrink: 0 }}
-                          />
-                        )}
-                        <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <h6 className="fw-bold mb-1 text-uppercase" style={{ fontSize: '0.85rem' }}>
-                              {item.productName}
-                            </h6>
-                            <button
-                              className="btn btn-sm p-0 ms-2 text-danger"
-                              style={{ lineHeight: 1, fontSize: '1rem' }}
-                              onClick={() => handleRemoveFromCart(item.cartId)}
-                              title="Remove"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                          <div className="text-muted" style={{ lineHeight: '1.6' }}>
-                            <span className="badge bg-light text-dark border me-1">Qty: {item.quantity}</span>
-                            {item.selectedSize && <span className="badge bg-light text-dark border me-1">Size: {item.selectedSize}</span>}
-                            {item.selectedFlavour && <span className="badge bg-light text-dark border me-1">🍫 {item.selectedFlavour}</span>}
-                            {item.selectedShape && <span className="badge bg-light text-dark border me-1">◆ {item.selectedShape}</span>}
-                          </div>
-                        </div>
-                      </div>
-
-                       {(item.topperText || item.wishText || item.cardMessage) && (
-                        <div
-                          className="mt-2 pt-2 border-top text-muted d-flex  gap-1"
-                          style={{ fontSize: '0.82rem' }}
-                        >
-                          {item.topperText && (
-                            <span class="badge bg-info text-dark">Topper Text</span>
-                            // <div>🎂 <strong>Topper:</strong> {item.topperText}</div>
-                          )}
-                          {item.wishText && (
-                          <span class="badge bg-info text-dark">Wish Text</span>
-                          // <div>✍️ <strong>Wish:</strong> {item.wishText}</div>
-                        )}
-                          {item.cardMessage && (
-                        <span class="badge bg-info text-dark">Card Message</span>
-                            // <div>💌 <strong>Card:</strong> {item.cardMessage}</div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="mt-2 text-end fw-bold" style={{ color: '#e07b8a' }}>
-                        ₨{item.itemTotal.toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="p-3 border-top bg-white" style={{ flexShrink: 0 }}>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <span className="fw-bold fs-6">Grand Total</span>
-              <h5 className="mb-0 fw-bold" style={{ color: '#e07b8a' }}>
-                ₨{cartGrandTotal.toLocaleString()}
-              </h5>
-            </div>
-            <button
-              className="btn w-100 py-2 fw-semibold text-white"
-              style={{ backgroundColor: '#e07b8a', border: 'none', fontSize: '1rem' }}
-              onClick={() => alert('Proceeding to checkout...')}
-            >
-              Proceed to Checkout →
-            </button>
-          </div>
-
         </div>
       </div>
     </>

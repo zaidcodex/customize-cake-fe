@@ -71,7 +71,7 @@ const Navbar = () => {
 ))}
 
         <li className="nav-item mx-2">
-          <Link className="nav-link fs-5 fw-bold" to="/about-us">About Us</Link>
+          <Link className="nav-link fs-5 fw-bold" to="/create-your-own-cake">Create Your Own Cake</Link>
         </li>
         <li className="nav-item mx-2">
           <Link className="nav-link fs-5 fw-bold" to="/contact-us">Contact US</Link>

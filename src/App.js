@@ -12,6 +12,8 @@ import Home from "./Components/Home";
 import ProductPage from "./Components/ProductPage";
 import Login from "./Admin Dashboard/Login";
 import Dashboard from "./Admin Dashboard/Dashboard";
+import CreateYourCake from "./Components/CreateYourCake";
+import BigLoader from "./Components/BigLoader";
 
 const CART_KEY = "cart_items";
 
@@ -39,18 +41,53 @@ function App() {
   // ── Advance payment screenshot state ───────────────────────────────────
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
   const [paymentScreenshotPreview, setPaymentScreenshotPreview] = useState(null);
+  const [screenshotUploading, setScreenshotUploading] = useState(false);
+  const [screenshotCloudinaryUrl, setScreenshotCloudinaryUrl] = useState(null);
   const fileInputRef = useRef(null);
 
-  const handleScreenshotChange = (e) => {
+  // ── Upload screenshot to Cloudinary ────────────────────────────────────
+  const uploadScreenshotToCloudinary = async (file) => {
+    setScreenshotUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "customize-cake");
+      formData.append("cloud_name", "drdk4hrkn");
+
+      const res = await fetch(
+        "https://api.cloudinary.com/v1_1/drdk4hrkn/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+      const data = await res.json();
+      console.log("Payment Screenshot Cloudinary URL:", data.secure_url);
+      setScreenshotCloudinaryUrl(data.secure_url);
+      return data.secure_url;
+    } catch (err) {
+      console.error("Screenshot upload failed:", err);
+      alert("Failed to upload screenshot. Please try again.");
+      return null;
+    } finally {
+      setScreenshotUploading(false);
+    }
+  };
+
+  const handleScreenshotChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setPaymentScreenshot(file);
     setPaymentScreenshotPreview(URL.createObjectURL(file));
+    setScreenshotCloudinaryUrl(null); // reset previous URL
+    // Upload immediately on selection
+    await uploadScreenshotToCloudinary(file);
   };
 
   const handleRemoveScreenshot = () => {
     setPaymentScreenshot(null);
     setPaymentScreenshotPreview(null);
+    setScreenshotCloudinaryUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -116,6 +153,26 @@ function App() {
     handleRemoveScreenshot();
   };
 
+  // Determine if Place Order button should be disabled
+  const isAdvance = checkoutData.paymentMethod === "ADVANCE";
+  const canPlaceOrder = !isAdvance || (isAdvance && screenshotCloudinaryUrl && !screenshotUploading);
+
+  // ── Build enriched items for the order payload ──────────────────────────
+  // Each cart item already carries `image` (first product image or custom cake
+  // reference image) and `userCake` (true for custom cakes). We remap them to
+  // the field names the backend / Order schema expects.
+  const buildOrderItems = () =>
+    cartItems.map((item) => ({
+      productName: item.productName,
+      quantity: item.quantity,
+      price: item.itemTotal,                          // total price for this line
+      selectedSize: item.selectedSize || null,
+      selectedFlavour: item.selectedFlavour || null,
+      selectedShape: item.selectedShape || null,
+      productImage: item.image || null,               // ← Cloudinary URL
+      isCustomCake: item.userCake === true,           // ← boolean flag
+    }));
+
   const hideNavbarRoutes = [
     "/admin-login",
     "/admin-dashboard",
@@ -143,13 +200,15 @@ function App() {
           <Route exact path="/:category/:slug/:id">
             <AllProducts />
           </Route>
-
-          <Route exact path="/product/:id">
-            <ProductPage cartItems={cartItems} setCartItems={setCartItems} />
-          </Route>
+<Route exact path="/product/:id">
+  <ProductPage cartItems={cartItems} setCartItems={setCartItems} setShowCart={setShowCart} />
+</Route>
 
           <Route exact path="/admin-login">
             <Login />
+          </Route>
+          <Route exact path="/create-your-own-cake">
+            <CreateYourCake setCartItems={setCartItems} setShowCart={setShowCart} />
           </Route>
 
           <Route path="/admin-dashboard">
@@ -255,7 +314,7 @@ function App() {
                   >
                     <div className="card-body p-3">
                       <div className="d-flex align-items-start gap-3">
-                        {item.image && (
+                        {item.image ? (
                           <img
                             src={item.image}
                             alt={item.productName}
@@ -267,16 +326,46 @@ function App() {
                               flexShrink: 0,
                             }}
                           />
+                        ) : (
+                          /* Placeholder for custom cakes with no reference image */
+                          <div
+                            className="rounded-2 d-flex align-items-center justify-content-center"
+                            style={{
+                              width: "64px",
+                              height: "64px",
+                              flexShrink: 0,
+                              backgroundColor: "#fff0f0",
+                              border: "1px dashed #FDACAC",
+                              fontSize: "1.6rem",
+                            }}
+                          >
+                            🎂
+                          </div>
                         )}
 
                         <div className="flex-grow-1">
                           <div className="d-flex justify-content-between align-items-start">
-                            <h6
-                              className="fw-bold mb-1 text-uppercase"
-                              style={{ fontSize: "0.85rem" }}
-                            >
-                              {item.productName}
-                            </h6>
+                            <div>
+                              <h6
+                                className="fw-bold mb-1 text-uppercase"
+                                style={{ fontSize: "0.85rem" }}
+                              >
+                                {item.productName}
+                              </h6>
+                              {/* Custom cake badge */}
+                              {item.userCake && (
+                                <span
+                                  className="badge mb-1"
+                                  style={{
+                                    backgroundColor: "#fce8e8",
+                                    color: "#e07b8a",
+                                    fontSize: "0.72rem",
+                                  }}
+                                >
+                                  ✨ Custom Cake
+                                </span>
+                              )}
+                            </div>
                             <button
                               className="btn btn-sm p-0 ms-2 text-danger"
                               style={{ lineHeight: 1, fontSize: "1rem" }}
@@ -442,7 +531,7 @@ function App() {
                     </div>
 
                     {/* ── Advance Payment Section ── */}
-                    {checkoutData.paymentMethod === "ADVANCE" && (
+                    {isAdvance && (
                       <div className="col-12">
                         <div
                           className="p-3 rounded-3"
@@ -503,31 +592,53 @@ function App() {
                                 className="rounded-3 w-100"
                                 style={{ maxHeight: "220px", objectFit: "cover", border: "1px solid #f5c2c7" }}
                               />
-                              <button
-                                type="button"
-                                onClick={handleRemoveScreenshot}
-                                className="btn btn-sm position-absolute"
-                                style={{
-                                  top: "8px",
-                                  right: "8px",
-                                  backgroundColor: "rgba(0,0,0,0.6)",
-                                  color: "#fff",
-                                  borderRadius: "50%",
-                                  width: "28px",
-                                  height: "28px",
-                                  padding: "0",
-                                  lineHeight: "1",
-                                  fontSize: "0.85rem",
-                                }}
-                              >
-                                ✕
-                              </button>
-                              <div
-                                className="mt-2 d-flex align-items-center gap-1"
-                                style={{ fontSize: "0.8rem", color: "#198754" }}
-                              >
-                                <span>✅</span>
-                                <span>{paymentScreenshot?.name}</span>
+                              {/* Remove button — only show when not uploading */}
+                              {!screenshotUploading && (
+                                <button
+                                  type="button"
+                                  onClick={handleRemoveScreenshot}
+                                  className="btn btn-sm position-absolute"
+                                  style={{
+                                    top: "8px",
+                                    right: "8px",
+                                    backgroundColor: "rgba(0,0,0,0.6)",
+                                    color: "#fff",
+                                    borderRadius: "50%",
+                                    width: "28px",
+                                    height: "28px",
+                                    padding: "0",
+                                    lineHeight: "1",
+                                    fontSize: "0.85rem",
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              )}
+
+                              {/* Upload status */}
+                              <div className="mt-2 d-flex align-items-center gap-2" style={{ fontSize: "0.82rem" }}>
+                                {screenshotUploading ? (
+                                  <>
+                                    <div
+                                      className="spinner-border spinner-border-sm"
+                                      role="status"
+                                      style={{ color: "#e07b8a", width: "14px", height: "14px" }}
+                                    ></div>
+                                    <span className="text-muted">Uploading screenshot...</span>
+                                  </>
+                                ) : screenshotCloudinaryUrl ? (
+                                  <>
+                                    <span style={{ color: "#198754" }}>✅</span>
+                                    <span style={{ color: "#198754", fontWeight: "600" }}>
+                                      Screenshot uploaded successfully
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span style={{ color: "#dc3545" }}>⚠️</span>
+                                    <span style={{ color: "#dc3545" }}>Upload failed — please remove and try again</span>
+                                  </>
+                                )}
                               </div>
                             </div>
                           )}
@@ -558,21 +669,30 @@ function App() {
                 <div className="modal-footer">
                   <button
                     className="btn w-100 py-2 text-white fw-semibold"
-                    style={{ backgroundColor: "#e07b8a", border: "none", fontSize: "1rem" }}
-                    disabled={checkoutData.paymentMethod === "ADVANCE" && !paymentScreenshot}
+                    style={{
+                      backgroundColor: canPlaceOrder ? "#e07b8a" : "#f5a5b0",
+                      border: "none",
+                      fontSize: "1rem",
+                      cursor: canPlaceOrder ? "pointer" : "not-allowed",
+                    }}
+                    disabled={!canPlaceOrder}
                     onClick={() => {
                       handlePlaceOrder(
-                        cartItems,
+                        buildOrderItems(),          // ← enriched items with productImage + isCustomCake
                         cartGrandTotal,
-                        checkoutData,
+                        {
+                          ...checkoutData,
+                          paymentScreenshotUrl: screenshotCloudinaryUrl || null,
+                        },
                         setCartItems,
-                        paymentScreenshot,
                       );
                       setShowCheckoutModal(false);
                       resetForm();
                     }}
                   >
-                    {checkoutData.paymentMethod === "ADVANCE" && !paymentScreenshot
+                    {screenshotUploading
+                      ? "Uploading Screenshot..."
+                      : isAdvance && !screenshotCloudinaryUrl
                       ? "Upload Screenshot to Place Order"
                       : "Place Order"}
                   </button>
@@ -584,6 +704,7 @@ function App() {
           <div className="modal-backdrop fade show" style={{ zIndex: 1054 }}></div>
         </>
       )}
+       {!shouldHideNavbar &&<BigLoader/>}
     </>
   );
 }

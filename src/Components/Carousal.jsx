@@ -83,13 +83,13 @@ const Carousal = () => {
    <div id="carouselExampleFade" class="carousel slide carousel-fade" data-bs-ride="carousel">
   <div class="carousel-inner">
     <div class="carousel-item active">
-      <img src="https://plus.unsplash.com/premium_photo-1705433052895-752216a6a0f5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '750px', objectFit: 'cover' }}/>
+      <img src="https://plus.unsplash.com/premium_photo-1705433052895-752216a6a0f5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '850px', objectFit: 'cover' }}/>
     </div>
     <div class="carousel-item">
-      <img src="https://images.unsplash.com/photo-1542826438-bd32f43d626f?q=80&w=1292&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '750px', objectFit: 'cover' }}/>
+      <img src="https://images.unsplash.com/photo-1542826438-bd32f43d626f?q=80&w=1292&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '850px', objectFit: 'cover' }}/>
     </div>
     <div class="carousel-item">
-      <img src="https://images.unsplash.com/photo-1586985289906-406988974504?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '750px', objectFit: 'cover' }}/>
+      <img src="https://images.unsplash.com/photo-1586985289906-406988974504?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '850px', objectFit: 'cover' }}/>
     </div>
     
     <div

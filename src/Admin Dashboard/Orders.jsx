@@ -1,308 +1,426 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom/cjs/react-router-dom'
+import React, { useState, useContext, useEffect } from 'react'
+import AppContext from '../Context/appContext';
 
 const Orders = () => {
-    const [changeStatusmodal, setChangeStatusModal] = useState(false)
-    const [viewDetailsModal, setViewDetailsModal] = useState(false)
-    const [selectedProduct, setSelectedProduct] = useState(null)
+  const context = useContext(AppContext);
+  const { orders, getOrders, updateOrderStatus, updatePaymentStatus } = context;
 
- const products = [
-  {
-    _id: "69871f41ad3e722698f2fd5f",
-    categoryId: "69768ec11a3ca27a28f78154",
-    subCategoryId: "697758bdb76d8db9375915c5",
+  const [changeStatusModal, setChangeStatusModal] = useState(false);
+  const [viewDetailsModal, setViewDetailsModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [changePaymentModal, setChangePaymentModal] = useState(false);
+  const [newPaymentStatus, setNewPaymentStatus] = useState('');
 
-    productName: "Chocolate Fudge Cake",
-    status:"Pending Approval",
-    productDesc: `
-      <p>Rich and moist chocolate cake layered with creamy fudge frosting.</p>
-      <ul>
-        <li>Premium cocoa used</li>
-        <li>Soft sponge texture</li>
-        <li>Perfect for birthdays</li>
-      </ul>
-    `,
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true);
+      await getOrders();
+      setLoading(false);
+    };
+    fetchOrders();
+  }, []);
 
-    metaTitle: "Chocolate Fudge Cake – Sweet Treats",
-    metaDesc: "Indulge in our delicious Chocolate Fudge Cake made with rich cocoa and creamy frosting.",
+  const handleOpenChangeStatus = (order) => {
+    setSelectedOrder(order);
+    setNewStatus(order.orderStatus);
+    setChangeStatusModal(true);
+  };
 
-    images: [
-      {
-        url: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-        public_id: "cake1"
-      },
-      {
-        url: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-        public_id: "cake2"
-      }
-    ],
+  const handleUpdateStatus = () => {
+    if (selectedOrder && newStatus) {
+      updateOrderStatus(selectedOrder._id, newStatus);
+      setChangeStatusModal(false);
+    }
+  };
 
-    sizes: [
-      { size: "1 Pound", price: 1200 },
-      { size: "2 Pound", price: 2200 }
-    ],
+  const handleOpenChangePayment = (order) => {
+    setSelectedOrder(order);
+    setNewPaymentStatus(order.paymentStatus);
+    setChangePaymentModal(true);
+  };
 
-    flavours: ["Chocolate", "Dark Chocolate"],
-    shapes: ["Round", "Heart"],
+  const handleUpdatePaymentStatus = () => {
+    if (selectedOrder && newPaymentStatus) {
+      updatePaymentStatus(selectedOrder._id, newPaymentStatus);
+      setChangePaymentModal(false);
+    }
+  };
 
-    eggType: "egg",
-    customMessage: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quidem itaque expedita totam culpa autem corporis tempore, est voluptate nihil, minima quos quia eius exercitationem assumenda inventore. Nam veritatis hic quos odio blanditiis.",
-    isAvailable: true,
-    preparationTime: 4,
+  const getStatusBadgeClass = (status) => {
+    const map = {
+      Pending: 'bg-warning text-dark',
+      Confirmed: 'bg-primary',
+      Baking: 'bg-info text-dark',
+      'Out For Delivery': 'bg-secondary',
+      Delivered: 'bg-success',
+      Cancelled: 'bg-danger',
+    };
+    return `badge ${map[status] || 'bg-secondary'}`;
+  };
 
-    createdAt: "2026-02-07T11:17:21.618+00:00"
-  },
+  const getPaymentBadgeClass = (status) => {
+    const map = { Pending: 'bg-warning text-dark', Partial: 'bg-info text-dark', Paid: 'bg-success' };
+    return `badge ${map[status] || 'bg-secondary'}`;
+  };
 
-  {
-    _id: "79871f41ad3e722698f2fd5g",
-    categoryId: "69768ec11a3ca27a28f78155",
-    subCategoryId: "697758bdb76d8db9375915c6",
-
-    productName: "Vanilla Dream Cake",
-    status:"Pending Approval",
-    productDesc: `
-      <p>Soft vanilla sponge layered with smooth buttercream frosting.</p>
-      <ul>
-        <li>Light and fluffy texture</li>
-        <li>Fresh dairy cream</li>
-        <li>Perfect for weddings & anniversaries</li>
-      </ul>
-    `,
-
-    metaTitle: "Vanilla Dream Cake – Classic Delight",
-    metaDesc: "Experience the smooth and creamy taste of our Vanilla Dream Cake.",
-
-    images: [
-      {
-        url: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-        public_id: "vanilla1"
-      },
-      {
-        url: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-        public_id: "vanilla2"
-      },
-      {
-        url: "https://res.cloudinary.com/demo/image/upload/sample.jpg",
-        public_id: "vanilla3"
-      }
-    ],
-
-    sizes: [
-      { size: "1 Pound", price: 1000 },
-      { size: "3 Pound", price: 3000 }
-    ],
-
-    flavours: ["Vanilla", "Strawberry", "Pineapple"],
-    shapes: ["Round", "Square", "Rectangle"],
-
-    eggType: "eggless",
-    customMessage: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Quidem itaque expedita totam culpa autem corporis tempore, est voluptate nihil, minima quos quia eius exercitationem assumenda inventore. Nam veritatis hic quos odio blanditiis.",
-    isAvailable: false,
-    preparationTime: 6,
-
-    createdAt: "2026-02-10T09:30:00.000+00:00"
-  }
-];
+  // ── Size can be a plain string ("2 lb") or an object ({ size, price }) ──
+  // This normalises both to a display string.
+  const formatSize = (size) => {
+    if (!size) return '—';
+    if (typeof size === 'object') {
+      // e.g. { size: "1 Pound", price: 1200 }
+      return size.size ? `${size.size}${size.price ? ` (Rs. ${size.price})` : ''}` : '—';
+    }
+    return size; // plain string e.g. "2 lb"
+  };
 
   return (
     <>
-    <div className="container py-4">
-      <h1>Orders</h1>
-      <hr />
+      <div className="container py-4">
+        <h1>Orders</h1>
+        <hr />
 
-      {products.map((product) => (
-        <div
-          key={product._id}
-          className="d-flex justify-content-between align-items-center mb-3 p-3"
-          style={{
-            border: "1px solid #dee2e6",
-            borderRadius: "10px",
-            backgroundColor: "#fff",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-          }}
-        >
-          <div className="d-flex gap-3 align-items-center">
-            <img
-              className="rounded"
-              style={{ width: "80px", height: "100px", objectFit: "cover" }}
-              src={product.images[0].url}
-              alt="product"
-            />
-
-            <div>
-              <h5 className="mb-1 fw-bold">
-                {product.productName}
-              </h5>
-              <div className="text-muted">Status: {product.status}</div>
-              <div className="text-muted">Price: {product.sizes[0].price}</div>
-              <div className="text-muted">Weight: {product.sizes[0].size}</div>
+        {loading ? (
+          <div className="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+            <div
+              className="spinner-border mb-3"
+              role="status"
+              style={{ width: '3rem', height: '3rem', color: '#e07b8a' }}
+            >
+              <span className="visually-hidden">Loading...</span>
             </div>
+            <p className="fw-semibold" style={{ color: '#b07070' }}>Fetching orders...</p>
           </div>
-
-          <div className="d-flex gap-2">
-            <button className="btn btn-outline-secondary" onClick={()=>{setChangeStatusModal(true)}}>
-              Change Status
-            </button>
-            <button className="btn btn-outline-secondary" onClick={()=>{setViewDetailsModal(true);  setSelectedProduct(product)}}>
-              View Details
-            </button>
+        ) : !orders || orders.length === 0 ? (
+          <div className="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+            <span style={{ fontSize: '3rem' }}>📦</span>
+            <p className="mt-2 fw-semibold">No orders found.</p>
           </div>
-        </div>
-      ))}
-    </div>
+        ) : (
+          orders.map((order) => (
+            <div
+              key={order._id}
+              className="d-flex justify-content-between align-items-center mb-3 p-3"
+              style={{ border: '1px solid #dee2e6', borderRadius: '10px', backgroundColor: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+            >
+              <div className="d-flex gap-3 align-items-center">
+                {/* Priority: first non-empty productImage across all items → payment screenshot → cake emoji placeholder */}
+                {(() => {
+                  const cardImg = order.items?.map(i => i.productImage).find(url => url && url.trim() !== '');
+                  const thumbStyle = { width: '80px', height: '100px', objectFit: 'cover', flexShrink: 0, borderRadius: '8px' };
+                  if (cardImg) {
+                    return <img src={cardImg} alt="product" style={thumbStyle} />;
+                  }
+                  if (order.paymentScreenshotUrl) {
+                    return <img src={order.paymentScreenshotUrl} alt="Payment" style={thumbStyle} />;
+                  }
+                  return (
+                    <div
+                      className="d-flex flex-column align-items-center justify-content-center text-muted"
+                      style={{ width: '80px', height: '100px', backgroundColor: '#fff8f8', border: '1px dashed #fce8e8', flexShrink: 0, borderRadius: '8px', fontSize: '11px', gap: '4px' }}
+                    >
+                      <span style={{ fontSize: '28px' }}>🎂</span>
+                      <span style={{ color: '#d4b0b0' }}>No image</span>
+                    </div>
+                  );
+                })()}
 
-{changeStatusmodal && (
-  <>
-      <div className="modal-backdrop fade show"></div>
-      <div class="modal d-block" tabindex="-1">
-  <div class="modal-dialog modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Edit Sub Category</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={()=>{setChangeStatusModal(false)}} ></button>
-      </div>
-      <div class="modal-body">
-         <label for="exampleFormControlInput1" class="form-label">Update Status</label>
-         <select
-  className="form-select"
-//   value={sizeType}
-//   onChange={}
->
-  <option value="Pending Approval">Pending Approval</option>
-  <option value="Processing">Processing</option>
-  <option value="Shipped">Shipped</option>
-  <option value="Delivered">Delivered</option>
-  <option value="Cancel">Cancel</option>
-</select>
-      </div>
-      <div class="modal-footer">
-         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onClick={()=>setChangeStatusModal(false)}>Close</button>
-                 {/* <button type="button" class="btn btn-primary" onClick={()=>{handleEditSubCategory(subCategoryId, subCategory);setEditSubCategoryModal(false)}}>Update Sub Category</button>  */}
-      </div>
-    </div>
-  </div>
-</div>
-</>
-)}
+                <div>
+                  <h5 className="mb-1 fw-bold">#{order.trackingId}</h5>
 
+                  {order.items?.some(i => i.isCustomCake) && (
+                    <span className="badge mb-1" style={{ backgroundColor: '#fce8e8', color: '#e07b8a', fontSize: '0.72rem' }}>
+                      ✨ Custom Cake
+                    </span>
+                  )}
 
-{viewDetailsModal && selectedProduct && (
-  <>
-    <div className="modal fade show d-block" tabIndex="-1">
-      <div className="modal-dialog modal-dialog-centered modal-xl">
-        <div className="modal-content">
-
-          <div className="modal-header">
-            <h5 className="modal-title">
-              {selectedProduct.productName}
-            </h5>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={() => setViewDetailsModal(false)}
-            ></button>
-          </div>
-
-          <div className="modal-body">
-
-            {/* ALL IMAGES */}
-            <h6 className="fw-bold mb-2">Product Images</h6>
-            <div className="row mb-4">
-              {selectedProduct.images.map((img, index) => (
-                <div key={index} className="col-md-3 mb-3">
-                  <img
-                    src={img.url}
-                    alt="product"
-                    className="img-fluid rounded shadow-sm"
-                    style={{ height: "200px", objectFit: "cover", width: "100%" }}
-                  />
+                  <div className="text-muted">Customer: {order.customer?.name}</div>
+                  <div className="text-muted">Phone: {order.customer?.phone}</div>
+                  <div className="text-muted">Total: Rs. {order.totalAmount}</div>
+                  <div className="text-muted">
+                    Delivery: {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : 'N/A'}
+                  </div>
+                  <div className="mt-1 d-flex gap-2">
+                    <span className={getStatusBadgeClass(order.orderStatus)}>{order.orderStatus}</span>
+                    <span className={getPaymentBadgeClass(order.paymentStatus)}>{order.paymentStatus}</span>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* BASIC INFO */}
-            <div className="row">
-              <div className="">
-
-                {/* <p><strong>Status:</strong> {selectedProduct.isAvailable ? "Available" : "Not Available"}</p> */}
-                <p><strong>Egg Type:</strong> {selectedProduct.eggType}</p>
-                <p><strong>Preparation Time:</strong> {selectedProduct.preparationTime} Hours</p>
-                <p><strong>Custom Message:</strong> {selectedProduct.customMessage}</p>
-                <p><strong>Created At:</strong> {new Date(selectedProduct.createdAt).toLocaleString()}</p>
-
               </div>
 
-              {/* <div className="col-md-6">
-                <p><strong>Product ID:</strong> {selectedProduct._id}</p>
-                <p><strong>Category ID:</strong> {selectedProduct.categoryId}</p>
-                <p><strong>Sub Category ID:</strong> {selectedProduct.subCategoryId}</p>
-                <p><strong>Meta Title:</strong> {selectedProduct.metaTitle}</p>
-                <p><strong>Meta Description:</strong> {selectedProduct.metaDesc}</p>
-              </div> */}
+              <div className="d-flex flex-column gap-2">
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => handleOpenChangeStatus(order)}>
+                  📦 Order Status
+                </button>
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => handleOpenChangePayment(order)}>
+                  💳 Payment Status
+                </button>
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => { setViewDetailsModal(true); setSelectedOrder(order); }}>
+                  🔍 View Details
+                </button>
+              </div>
             </div>
-
-            <hr />
-
-            {/* DESCRIPTION (HTML SAFE RENDER) */}
-            <h6 className="fw-bold">Product Description</h6>
-            <div
-              dangerouslySetInnerHTML={{ __html: selectedProduct.productDesc }}
-            ></div>
-
-            <hr />
-
-          {/* ORDER DETAILS */}
-
-<h6 className="fw-bold mt-4">Order Details</h6>
-
-<p>
-  <strong>Selected Size:</strong>{" "}
-  {selectedProduct.selectedSize?.size} - Rs.{" "}
-  {selectedProduct.selectedSize?.price}
-</p>
-
-<p>
-  <strong>Selected Flavour:</strong>{" "}
-  {selectedProduct.selectedFlavour}
-</p>
-
-<p>
-  <strong>Selected Shape:</strong>{" "}
-  {selectedProduct.selectedShape}
-</p>
-
-<p>
-  <strong>Quantity:</strong> {selectedProduct.quantity}
-</p>
-
-<p>
-  <strong>Total Price:</strong> Rs. {selectedProduct.totalPrice}
-</p>
-
-{selectedProduct.customMessage && (
-  <p>
-    <strong>Custom Message:</strong>{" "}
-    {selectedProduct.customMessage}
-  </p>
-)}
-          </div>
-
-          <div className="modal-footer">
-            <button
-              className="btn btn-secondary"
-              onClick={() => setViewDetailsModal(false)}
-            >
-              Close
-            </button>
-          </div>
-
-        </div>
+          ))
+        )}
       </div>
-    </div>
 
-    <div className="modal-backdrop fade show"></div>
-  </>
-)}
+      {/* ── Change Payment Status Modal ── */}
+      {changePaymentModal && selectedOrder && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">💳 Payment Status — #{selectedOrder.trackingId}</h5>
+                  <button type="button" className="btn-close" onClick={() => setChangePaymentModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3 d-flex justify-content-between text-muted" style={{ fontSize: '13px' }}>
+                    <span>Total: <strong>Rs. {selectedOrder.totalAmount}</strong></span>
+                    <span>Method: <strong>{selectedOrder.paymentMethod}</strong></span>
+                  </div>
+                  <label className="form-label">Update Payment Status</label>
+                  <select className="form-select" value={newPaymentStatus} onChange={(e) => setNewPaymentStatus(e.target.value)}>
+                    <option value="Pending">Pending</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Paid">Paid</option>
+                  </select>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setChangePaymentModal(false)}>Close</button>
+                  <button type="button" className="btn btn-primary" onClick={handleUpdatePaymentStatus}>Update Payment</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      
+      {changeStatusModal && selectedOrder && (
+        <>
+          <div className="modal-backdrop fade show"></div>
+          <div className="modal d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Change Order Status — #{selectedOrder.trackingId}</h5>
+                  <button type="button" className="btn-close" onClick={() => setChangeStatusModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  <label className="form-label">Update Status</label>
+                  <select className="form-select" value={newStatus} onChange={(e) => setNewStatus(e.target.value)}>
+                    <option value="Pending">Pending</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Baking">Baking</option>
+                    <option value="Out For Delivery">Out For Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setChangeStatusModal(false)}>Close</button>
+                  <button type="button" className="btn btn-primary" onClick={handleUpdateStatus}>Update Status</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── View Details Modal ── */}
+      {viewDetailsModal && selectedOrder && (
+        <>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-dialog-centered modal-xl">
+              <div className="modal-content">
+
+                <div className="modal-header">
+                  <h5 className="modal-title">Order #{selectedOrder.trackingId} — Details</h5>
+                  <button type="button" className="btn-close" onClick={() => setViewDetailsModal(false)}></button>
+                </div>
+
+                <div className="modal-body">
+
+                  {/* ── Cake / Product Images Gallery ── */}
+                  {(() => {
+                    const allImages = selectedOrder.items
+                      ?.flatMap(item => item.productImage ? [item.productImage] : [])
+                      .filter(Boolean) ?? [];
+                    return allImages.length > 0 ? (
+                      <>
+                        <h6 className="fw-bold mb-3">Cake Images</h6>
+                        <div className="d-flex flex-wrap gap-3 mb-4 justify-content-center">
+                          {allImages.map((url, i) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt={`Cake ${i + 1}`}
+                              className="rounded shadow-sm"
+                              style={{
+                                width: '160px',
+                                height: '160px',
+                                objectFit: 'cover',
+                                border: '2px solid #fce8e8',
+                                cursor: 'pointer',
+                                transition: 'transform .2s',
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+                              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                              onClick={() => window.open(url, '_blank')}
+                            />
+                          ))}
+                        </div>
+                        <hr />
+                      </>
+                    ) : (
+                      <div
+                        className="rounded d-flex flex-column align-items-center justify-content-center text-muted mx-auto mb-4"
+                        style={{ height: '110px', maxWidth: '320px', backgroundColor: '#fff8f8', border: '1px dashed #fce8e8' }}
+                      >
+                        <span style={{ fontSize: '2rem' }}>🎂</span>
+                        <span className="mt-1" style={{ fontSize: '13px' }}>No cake images uploaded</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Customer Info */}
+                  <h6 className="fw-bold mb-2">Customer Information</h6>
+                  <div className="row mb-3">
+                    <div className="col-md-4"><p><strong>Name:</strong> {selectedOrder.customer?.name}</p></div>
+                    <div className="col-md-4"><p><strong>Phone:</strong> {selectedOrder.customer?.phone}</p></div>
+                    <div className="col-md-4"><p><strong>Address:</strong> {selectedOrder.customer?.address}</p></div>
+                  </div>
+
+                  <hr />
+
+                  {/* Order Items */}
+                  <h6 className="fw-bold mb-2">Order Items</h6>
+                  <div className="table-responsive mb-3">
+                    <table className="table table-bordered table-sm align-middle">
+                      <thead className="table-light">
+                        <tr>
+                          <th style={{ width: 70 }}>Image</th>
+                          <th>Product</th>
+                          <th>Type</th>
+                          <th>Qty</th>
+                          <th>Price</th>
+                          <th>Size</th>
+                          <th>Flavour</th>
+                          <th>Shape</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedOrder.items?.map((item, index) => (
+                          <tr key={index}>
+                            <td>
+                              {item.productImage ? (
+                                <img
+                                  src={item.productImage}
+                                  alt={item.productName}
+                                  className="rounded"
+                                  style={{ width: '52px', height: '52px', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                <div
+                                  className="rounded d-flex align-items-center justify-content-center"
+                                  style={{ width: '52px', height: '52px', backgroundColor: '#fff0f0', border: '1px dashed #FDACAC', fontSize: '1.4rem' }}
+                                >
+                                  🎂
+                                </div>
+                              )}
+                            </td>
+                            <td>{item.productName}</td>
+                            <td>
+                              {item.isCustomCake
+                                ? <span className="badge" style={{ backgroundColor: '#fce8e8', color: '#e07b8a' }}>✨ Custom</span>
+                                : <span className="badge bg-light text-dark border">Regular</span>
+                              }
+                            </td>
+                            <td>{item.quantity}</td>
+                            <td>Rs. {item.price}</td>
+                            {/* formatSize handles both string "2 lb" and object { size, price } */}
+                            <td>{formatSize(item.selectedSize)}</td>
+                            <td>{item.selectedFlavour || '—'}</td>
+                            <td>{item.selectedShape || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <hr />
+
+                  {/* Payment Info */}
+                  <h6 className="fw-bold mb-2">Payment Information</h6>
+                  <div className="row mb-3">
+                    <div className="col-md-3"><p><strong>Total Amount:</strong> Rs. {selectedOrder.totalAmount}</p></div>
+                    <div className="col-md-3"><p><strong>Advance Paid:</strong> Rs. {selectedOrder.advanceAmount ?? 0}</p></div>
+                    <div className="col-md-3"><p><strong>Remaining:</strong> Rs. {selectedOrder.remainingAmount ?? 0}</p></div>
+                    <div className="col-md-3"><p><strong>Method:</strong> {selectedOrder.paymentMethod}</p></div>
+                  </div>
+                  <div className="row mb-3">
+                    <div className="col-md-3">
+                      <p><strong>Payment Status:</strong>{' '}
+                        <span className={getPaymentBadgeClass(selectedOrder.paymentStatus)}>{selectedOrder.paymentStatus}</span>
+                      </p>
+                    </div>
+                    <div className="col-md-3">
+                      <p><strong>Order Status:</strong>{' '}
+                        <span className={getStatusBadgeClass(selectedOrder.orderStatus)}>{selectedOrder.orderStatus}</span>
+                      </p>
+                    </div>
+                    <div className="col-md-3">
+                      <p><strong>Delivery Date:</strong>{' '}
+                        {selectedOrder.deliveryDate ? new Date(selectedOrder.deliveryDate).toLocaleDateString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="col-md-3">
+                      <p><strong>Ordered At:</strong>{' '}{new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Payment screenshot — inside payment section */}
+                  {selectedOrder.paymentScreenshotUrl ? (
+                    <div className="mt-3">
+                      <p className="fw-semibold mb-2" style={{ fontSize: '13px' }}>
+                        📸 Payment Screenshot
+                      </p>
+                      <img
+                        src={selectedOrder.paymentScreenshotUrl}
+                        alt="Payment Screenshot"
+                        className="img-fluid rounded shadow-sm"
+                        style={{
+                          maxHeight: '220px',
+                          objectFit: 'contain',
+                          border: '1px solid #f5c2c7',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => window.open(selectedOrder.paymentScreenshotUrl, '_blank')}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="d-flex align-items-center gap-2 mt-2 text-muted"
+                      style={{ fontSize: '13px' }}
+                    >
+                      <span>💵</span>
+                      <span>Cash on Delivery — no payment screenshot</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setViewDetailsModal(false)}>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show"></div>
+        </>
+      )}
     </>
   );
 };
