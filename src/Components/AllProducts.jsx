@@ -27,8 +27,8 @@ const AllProducts = () => {
 
   return (
     <div>
-      <ImgViewer/>
       
+      <ImgViewer/>
       <div className="container my-5">
         <form className="d-flex justify-content-center">
           <div className="input-group" style={{maxWidth: "1500px", width: "100%"}}>
