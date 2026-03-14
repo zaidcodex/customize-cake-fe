@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react'
+import {
+  Link
+} from "react-router-dom";
 
 const Carousal = () => {
 
@@ -126,13 +129,13 @@ const Carousal = () => {
                   Instagram
                 </button>
                 </a> */}
-                  <button 
+                  <Link 
                 className="heading start-application-btn text-decoration-none" 
-                to="loan-form" 
+                to="/create-your-own-cake" 
                 role="button"
               >
-                Start Your Application
-              </button>
+                Create Your Own Cake
+              </Link>
               </div>
   </div>
   {/* <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
