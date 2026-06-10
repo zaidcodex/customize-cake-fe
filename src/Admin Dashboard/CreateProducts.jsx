@@ -169,7 +169,7 @@ const handleSubmit = async () => {
     }
   })
   
-  console.log(productData);
+  console.log("Product data",productData);
 const res = await createProducts(productData)
 // const res = {success:true}
   if(res.success){

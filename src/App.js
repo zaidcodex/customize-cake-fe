@@ -2,7 +2,7 @@ import "./App.css";
 import AppContext from "./Context/appContext";
 import { useContext, useState, useEffect, useRef } from "react";
 import Navbar from "./Components/Navbar";
-import SecNavbar from "./Components/SecNavbar";
+import SecNavbar from "./images/SecNavbar";
 import Footer from "./Components/Footer";
 import AllProducts from "./Components/AllProducts";
 
@@ -190,7 +190,7 @@ function App() {
     <>
       <div className="App">
         {!shouldHideNavbar && <Navbar />}
-        {!shouldHideNavbar && <SecNavbar />}
+        {/* {!shouldHideNavbar && <SecNavbar />} */}
 
         <Switch>
           <Route exact path="/">

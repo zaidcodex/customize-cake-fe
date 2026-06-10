@@ -6,6 +6,10 @@ import Products from './Products';
 import Imgviewer from './Imgviewer';
 import Typesofcake from './Typesofcake';
 import OrderDesignerCake from './OrderDesignerCake';
+import CustomCakeSection from './Customcakesec';
+import WhyChoose from './WhyChoose';
+import Testimonials from './Testimonials';
+import Newsletter from './Newsletter';
 
 const Home = () => {
   return (
@@ -13,11 +17,15 @@ const Home = () => {
       <Carousal/>
      <Banner/>
      <Products/>
-     <div className='mx-3'>
+     <CustomCakeSection/>
+     <WhyChoose/>
+     <Testimonials/>
+     {/* <Newsletter/> */}
+     {/* <div className='mx-3'>
      <Imgviewer/>
      </div>
      <Typesofcake/>
-     <OrderDesignerCake/>
+     <OrderDesignerCake/> */}
     </div>
   )
 }

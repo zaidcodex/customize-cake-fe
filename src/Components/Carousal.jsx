@@ -1,154 +1,316 @@
-import React, { useState, useEffect } from 'react'
-import {
-  Link
-} from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import cakeImg from '../images/cake.png'; // ← move the uploaded cake image here
 
-const Carousal = () => {
+/* ── floating orb data ───────────────────────────────────── */
+const orbs = [
+  { size: 18, top: '8%',  left: '52%',  delay: '0s',   dur: '4s'  },
+  { size: 13, top: '6%',  left: '72%',  delay: '0.6s', dur: '5s'  },
+  { size: 22, top: '18%', left: '88%',  delay: '1.2s', dur: '3.5s'},
+  { size: 16, top: '42%', left: '57%',  delay: '0.3s', dur: '4.5s'},
+  { size: 11, top: '68%', left: '64%',  delay: '1.8s', dur: '3.8s'},
+  { size: 20, top: '78%', left: '82%',  delay: '0.9s', dur: '5.2s'},
+  { size: 14, top: '55%', left: '94%',  delay: '2.1s', dur: '4.2s'},
+];
 
+const Hero = () => (
+  <>
+    {/* ── Google Fonts ── */}
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap"
+      rel="stylesheet"
+    />
 
-// const [imgs, setImgs] = useState(["https://images.unsplash.com/photo-1586985289906-406988974504?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "https://images.unsplash.com/photo-1542826438-bd32f43d626f?q=80&w=1292&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", "https://plus.unsplash.com/premium_photo-1705433052895-752216a6a0f5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" ])
+    <style>{`
+      @keyframes floatY {
+        0%,100% { transform: translateY(0px) scale(1); }
+        50%      { transform: translateY(-14px) scale(1.05); }
+      }
+      @keyframes floatCake {
+        0%,100% { transform: translateY(0px); }
+        50%      { transform: translateY(-18px); }
+      }
+      @keyframes fadeSlideUp {
+        from { opacity:0; transform:translateY(24px); }
+        to   { opacity:1; transform:translateY(0); }
+      }
+      @keyframes popIn {
+        from { opacity:0; transform:scale(0.8) translateY(10px); }
+        to   { opacity:1; transform:scale(1) translateY(0); }
+      }
+      @keyframes arrowBounce {
+        0%,100% { transform: translateX(0); }
+        50%      { transform: translateX(6px); }
+      }
 
+      .hs-root {
+        background: #fff;
+        font-family: 'DM Sans', sans-serif;
+        min-height: 88vh;
+        display: flex;
+        align-items: center;
+        padding: 60px 80px 40px;
+        overflow: hidden;
+        position: relative;
+      }
 
-  return (
-    <><style>
-        {`
-          // .youtube-btn {
-          //   background-color: #FF0000;
-          //   border: 2px solid #FF0000;
-          //   color: white;
-          //   border-radius: 50px;
-          //   font-size: 1rem;
-          //   font-weight: 500;
-          //   transition: all 0.3s ease;
-          // }
-          
-          // .youtube-btn:hover {
-          //   background-color: #FF0000;
-          //   color: white;
-          //   border-color: #FF0000;
-          //   transform: scale(1.05);
-          // }
-          
-          // .facebook-btn {
-          //   background-color: #1877F2;
-          //   border: 2px solid #1877F2;
-          //   color: white;
-          //   border-radius: 50px;
-          //   font-size: 1rem;
-          //   font-weight: 500;
-          //   transition: all 0.3s ease;
-          // }
-          
-          // .facebook-btn:hover {
-          //   background-color: #1877F2;
-          //   color: white;
-          //   border-color: #1877F2;
-          //   transform: scale(1.05);
-          // }
-          
-          // .instagram-btn {
-          //   background-color: #E4405F;
-          //   border: 2px solid #E4405F;
-          //   color: white;
-          //   border-radius: 50px;
-          //   font-size: 1rem;
-          //   font-weight: 500;
-          //   transition: all 0.3s ease;
-          // }
-          
-          // .instagram-btn:hover {
-          //   background-color: #E4405F;
-          //   color: white;
-          //   border-color: #E4405F;
-          //   transform: scale(1.05);
-          // }
+      /* left col */
+      .hs-left {
+        flex: 1;
+        max-width: 520px;
+        animation: fadeSlideUp .9s ease both;
+      }
+      .hs-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: #fce8ec; color: #e05c8a;
+        font-size: 13px; font-weight: 600;
+        padding: 6px 16px; border-radius: 50px;
+        margin-bottom: 28px;
+      }
+      .hs-heading {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(42px, 5vw, 62px);
+        font-weight: 800;
+        line-height: 1.1;
+        color: #1a0a0a;
+        margin: 0 0 24px;
+      }
+      .hs-heading span { color: #e05c8a; }
+      .hs-sub {
+        font-size: 16px; color: #666; line-height: 1.65;
+        margin: 0 0 36px; max-width: 380px;
+      }
+      .hs-btns { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 48px; }
+      .hs-btn-primary {
+        background: #e05c8a; color: #fff;
+        border: none; border-radius: 50px;
+        padding: 14px 30px; font-size: 15px; font-weight: 600;
+        cursor: pointer; text-decoration: none;
+        transition: background .2s, transform .15s, box-shadow .2s;
+        box-shadow: 0 6px 20px rgba(224,92,138,.35);
+      }
+      .hs-btn-primary:hover {
+        background: #c9496f; transform: translateY(-2px);
+        box-shadow: 0 10px 28px rgba(224,92,138,.45);
+        color: #fff;
+      }
+      .hs-btn-secondary {
+        background: #fff; color: #1a0a0a;
+        border: 2px solid #e8e8e8; border-radius: 50px;
+        padding: 14px 28px; font-size: 15px; font-weight: 600;
+        cursor: pointer; text-decoration: none;
+        transition: border-color .2s, transform .15s;
+      }
+      .hs-btn-secondary:hover {
+        border-color: #e05c8a; color: #e05c8a;
+        transform: translateY(-2px);
+      }
+      .hs-divider {
+        width: 48px; height: 3px;
+        background: linear-gradient(90deg, #e05c8a, #f4a0b8);
+        border-radius: 2px; margin-bottom: 28px;
+      }
+      .hs-features { display: flex; gap: 32px; flex-wrap: wrap; }
+      .hs-feat {
+        display: flex; align-items: flex-start; gap: 12px;
+      }
+      .hs-feat-icon {
+        width: 40px; height: 40px; background: #fce8ec;
+        border-radius: 10px; display: flex; align-items: center;
+        justify-content: center; font-size: 18px; flex-shrink: 0;
+      }
+      .hs-feat-text strong { display:block; font-size:14px; font-weight:700; color:#1a0a0a; }
+      .hs-feat-text span  { font-size:12px; color:#999; }
 
-          .start-application-btn {
-            background-color: #FDACAC;
-            color: white;
-            border: 2px solid white;
-            padding: 10px 30px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            margin-top: 22px;
-          }
+      /* right col */
+      .hs-right {
+        flex: 1; position: relative;
+        display: flex; justify-content: center; align-items: center;
+        min-height: 560px;
+        animation: fadeSlideUp 1s ease .15s both;
+      }
 
-          .start-application-btn:hover {
-            background-color: white;
-            color: #963520;
-            border-color: white;
-          }
-        `}
-      </style>
-   <div id="carouselExampleFade" class="carousel slide carousel-fade" data-bs-ride="carousel">
-  <div class="carousel-inner">
-    <div class="carousel-item active">
-      <img src="https://plus.unsplash.com/premium_photo-1705433052895-752216a6a0f5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '850px', objectFit: 'cover' }}/>
-    </div>
-    <div class="carousel-item">
-      <img src="https://images.unsplash.com/photo-1542826438-bd32f43d626f?q=80&w=1292&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '850px', objectFit: 'cover' }}/>
-    </div>
-    <div class="carousel-item">
-      <img src="https://images.unsplash.com/photo-1586985289906-406988974504?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" class="d-block w-100" alt="..." style={{ height: '850px', objectFit: 'cover' }}/>
-    </div>
-    
-    <div
-                className="carousel-caption d-flex flex-column justify-content-center align-items-center"
-                style={{
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  position: 'absolute',
-                  backgroundColor: 'rgba(253, 121, 121, 0.40)',
-                  zIndex: 2
-                }}
-              >
-                <h1
-                  className=" h fw-bold text-center display-6 px-5 mb-4"
-                  style={{ color: 'white', maxWidth: '900px' }}
-                  data-aos="fade-up"
-                  data-aos-duration="1500"
-                >
-                  Welcome to Cake Shake
-                </h1>
-                <p className="text-light h fw-bold px-5" style={{ color: 'white', maxWidth: '900px' }}>A cozy place to enjoy desserts, shakes, and quality time with your loved ones.</p>
-                {/* <a
-  href="/"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{ textDecoration: "none" }}
->
-                <button className="btn d-flex align-items-center gap-2 px-3 py-2 instagram-btn">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/>
-                  </svg>
-                  Instagram
-                </button>
-                </a> */}
-                  <Link 
-                className="heading start-application-btn text-decoration-none" 
-                to="/create-your-own-cake" 
-                role="button"
-              >
-                Create Your Own Cake
-              </Link>
-              </div>
-  </div>
-  {/* <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
-    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Previous</span>
-  </button>
-  <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
-    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    <span class="visually-hidden">Next</span>
-  </button> */}
-</div>
-</>
-  )
-}
+      /* big blurred circle bg */
+      .hs-blob {
+        position: absolute;
+        width: 480px; height: 480px;
+        background: radial-gradient(circle, #fce8ec 0%, #fff5f8 60%, transparent 100%);
+        border-radius: 50%;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 0;
+      }
 
-export default Carousal
+      /* cake image */
+      .hs-cake {
+        position: relative; z-index: 1;
+        width: clamp(320px, 40vw, 500px);
+        animation: floatCake 5s ease-in-out infinite;
+        filter: drop-shadow(0 24px 48px rgba(224,92,138,.18));
+      }
+
+      /* floating pink orbs */
+      .hs-orb {
+        position: absolute; border-radius: 50%; z-index: 2;
+        background: radial-gradient(circle at 35% 35%, #f4a0b8, #e05c8a);
+        box-shadow: 0 4px 12px rgba(224,92,138,.3);
+      }
+
+      /* badge cards */
+      .hs-card {
+        position: absolute; z-index: 3;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(0,0,0,.10);
+        padding: 12px 16px;
+        display: flex; align-items: center; gap: 10px;
+        animation: popIn .7s ease both;
+      }
+      .hs-card-customers {
+        top: 12%; right: 4%;
+        animation-delay: .6s;
+      }
+      .hs-card-love {
+        bottom: 14%; right: 0%;
+        flex-direction: column; align-items: flex-end;
+        text-align: right;
+        animation-delay: .9s;
+      }
+      .hs-card-avatars {
+        display: flex;
+      }
+      .hs-avatar {
+        width: 28px; height: 28px; border-radius: 50%;
+        border: 2px solid #fff; margin-left: -8px;
+        font-size: 14px; background: #fce8ec;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .hs-avatar:first-child { margin-left: 0; }
+      .hs-card-text strong { font-size:14px; font-weight:700; color:#1a0a0a; }
+      .hs-card-text span   { font-size:11px; color:#999; display:block; }
+      .hs-arrow {
+        position: absolute; bottom: 22%; right: 10%;
+        z-index: 3; animation: arrowBounce 1.4s ease-in-out infinite;
+      }
+      .hs-love-label {
+        font-size: 13px; font-weight: 700; color: #1a0a0a; line-height: 1.3;
+      }
+      .hs-love-sub { font-size: 11px; color: #999; }
+
+      @media (max-width: 900px) {
+        .hs-root { flex-direction: column; padding: 40px 24px 32px; text-align: center; }
+        .hs-left { max-width: 100%; }
+        .hs-btns, .hs-features { justify-content: center; }
+        .hs-right { min-height: 340px; }
+        .hs-cake { width: 260px; }
+        .hs-blob { width: 300px; height: 300px; }
+      }
+    `}</style>
+
+    <section className="hs-root">
+
+      {/* ── LEFT ── */}
+      <div className="hs-left">
+        <div className="hs-badge">
+          🎂 Design Your Dream Cake
+        </div>
+
+        <h1 className="hs-heading">
+          Make Every<br />
+          Occasion <span>Sweeter</span>
+        </h1>
+
+        <p className="hs-sub">
+          Create and order custom cakes online.<br />
+          Fresh, delicious &amp; made with love ❤️
+        </p>
+
+        <div className="hs-btns">
+          <Link to="/create-your-own-cake" className="hs-btn-primary">
+            Create Your Own Cake
+          </Link>
+          <Link to="/cakes" className="hs-btn-secondary">
+            Explore Cakes 🎨
+          </Link>
+        </div>
+
+        <div className="hs-divider" />
+
+        <div className="hs-features">
+          <div className="hs-feat">
+            <div className="hs-feat-icon">🌿</div>
+            <div className="hs-feat-text">
+              <strong>100% Eggless</strong>
+              <span>Fresh &amp; Healthy</span>
+            </div>
+          </div>
+          <div className="hs-feat">
+            <div className="hs-feat-icon">🚚</div>
+            <div className="hs-feat-text">
+              <strong>On-Time Delivery</strong>
+              <span>Your Cakery, On Time</span>
+            </div>
+          </div>
+          <div className="hs-feat">
+            <div className="hs-feat-icon">⭐</div>
+            <div className="hs-feat-text">
+              <strong>Best Quality</strong>
+              <span>Premium Ingredients</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── RIGHT ── */}
+      <div className="hs-right">
+        {/* background blob */}
+        <div className="hs-blob" />
+
+        {/* floating orbs */}
+        {orbs.map((o, i) => (
+          <div key={i} className="hs-orb" style={{
+            width: o.size, height: o.size,
+            top: o.top, left: o.left,
+            animation: `floatY ${o.dur} ease-in-out ${o.delay} infinite`,
+          }} />
+        ))}
+
+        {/* cake image — use the uploaded cake-hero.png */}
+        <img
+          src={cakeImg}
+          alt="CakeShake signature cake"
+          className="hs-cake"
+        />
+
+        {/* 10K+ Happy Customers card */}
+        <div className="hs-card hs-card-customers">
+          <div className="hs-card-avatars">
+            <div className="hs-avatar">😊</div>
+            <div className="hs-avatar">🥰</div>
+          </div>
+          <div className="hs-card-text">
+            <strong>10K+ 🎉</strong>
+            <span>Happy Customers</span>
+          </div>
+        </div>
+
+        {/* arrow + Made with Love & Care */}
+        <div style={{ position:'absolute', bottom:'12%', right:'2%', zIndex:3, textAlign:'right' }}>
+          {/* curved arrow SVG */}
+          <svg width="48" height="40" viewBox="0 0 48 40" fill="none"
+            style={{ display:'block', marginLeft:'auto', marginRight:'12px',
+              animation:'arrowBounce 1.4s ease-in-out infinite' }}>
+            <path d="M4 4 C12 4, 36 10, 44 36" stroke="#e05c8a" strokeWidth="2"
+              strokeLinecap="round" fill="none" strokeDasharray="4 3"/>
+            <path d="M38 32 L44 36 L40 28" stroke="#e05c8a" strokeWidth="2"
+              strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          </svg>
+          <div className="hs-love-label">Made with</div>
+          <div className="hs-love-sub">Love &amp; Care</div>
+        </div>
+      </div>
+    </section>
+  </>
+);
+
+export default Hero;
